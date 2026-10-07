@@ -39,7 +39,7 @@ html{font-size:2.3256vw;-webkit-text-size-adjust:100%;text-size-adjust:100%;heig
   --hdr:calc(7.3rem + var(--st));
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;height:100%;overflow:hidden;background:#cfe2e3;color:var(--ink);font-family:var(--body);font-size:1.6rem;-webkit-font-smoothing:antialiased;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+body{margin:0;height:100%;overflow:hidden;background:#F7FBFB;color:var(--ink);font-family:var(--body);font-size:1.6rem;-webkit-font-smoothing:antialiased;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
 [hidden]{display:none!important}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:inherit;-webkit-appearance:none;appearance:none}
 button:focus{outline:none}
@@ -49,6 +49,8 @@ img{-webkit-user-drag:none}
 p,h1,h2,h3,ol,ul{margin:0;padding:0}
 
 #app{position:fixed;top:0;bottom:0;left:0;right:0;margin:0 auto;width:100%;max-width:500px;overflow:hidden;background:#F7FBFB}
+/* iPhone home-screen app: the layout viewport can end above the real bottom edge, JS sets the true height */
+html.fixh #app{bottom:auto;height:var(--appH)}
 .screen{position:absolute;top:0;left:0;right:0;bottom:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .fadein{-webkit-animation:fadeIn var(--d,.4s) ease-out both;animation:fadeIn var(--d,.4s) ease-out both}
 @-webkit-keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -134,7 +136,7 @@ p,h1,h2,h3,ol,ul{margin:0;padding:0}
 
 /* ---------- map ---------- */
 .mapwrap{--mh:93.2rem;position:relative;width:100%;height:calc(var(--mh) - 4.7rem + var(--st));overflow:hidden}
-@supports (height:max(1px,2px)){.mapwrap{--mh:max(93.2rem,calc(100vh + 4.7rem - var(--st)))}}
+@supports (height:max(1px,2px)){.mapwrap{--mh:max(93.2rem,calc(var(--appH,100vh) + 4.7rem - var(--st)))}}
 .mapframe{position:absolute;left:50%;top:calc(var(--st) - 4.7rem);width:43rem;width:calc(var(--mh) * .461373);height:var(--mh);-webkit-transform:translateX(-50%);transform:translateX(-50%)}
 .mapframe .base,.mapframe .ov{position:absolute;left:0;top:0;width:100%;height:100%}
 .chips{position:absolute;top:calc(var(--hdr) + .9rem);left:0;right:0;display:-webkit-box;display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 1.8rem .6rem;z-index:3;scrollbar-width:none}
@@ -520,7 +522,18 @@ function movePill(i, instant){
 }
 tabbar.addEventListener("touchstart", function(e){ if (e.target.closest("button.on")) { spring.press = .94; drawPill(); } }, {passive:true});
 document.addEventListener("touchend", function(){ if (spring.press !== 1) { spring.press = 1; drawPill(); } }, {passive:true});
-window.addEventListener("resize", function(){ movePill(TABS.indexOf(navTab()), true); });
+/* Home-screen (standalone) mode on iPhone: window.innerHeight can be shorter than the screen, which leaves a strip at the bottom */
+function fitScreen(){
+  var root = document.documentElement, h = window.innerHeight, w = window.innerWidth;
+  var standalone = window.navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  var scr = (w < h) ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+  if (standalone && w <= 600 && scr > h && scr - h <= 140) { h = scr; root.classList.add("fixh"); } else { root.classList.remove("fixh"); }
+  root.style.setProperty("--appH", h + "px");
+}
+fitScreen();
+window.addEventListener("resize", function(){ fitScreen(); movePill(TABS.indexOf(navTab()), true); });
+window.addEventListener("orientationchange", function(){ setTimeout(fitScreen, 250); });
+window.addEventListener("pageshow", fitScreen);
 
 /* ---------- views ---------- */
 function navTab(){ return S.tab === "detail" ? S.from : (S.tab === "finale" ? "medal" : S.tab); }
