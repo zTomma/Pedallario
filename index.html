@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#378285">
+<meta name="theme-color" content="#378285" id="themecolor">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="PedalLario">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
@@ -141,7 +141,7 @@ html.mapbg{background:#cdd3d2}
 /* ---------- map ---------- */
 .mapwrap{--mh:93.2rem;position:relative;width:100%;height:calc(var(--mh) - 4.7rem + var(--st));overflow:hidden}
 @supports (height:max(1px,2px)){.mapwrap{--mh:max(93.2rem,calc(var(--appH,100vh) + 4.7rem - var(--st)))}}
-.mapframe{position:absolute;left:50%;top:calc(var(--st) - 4.7rem);width:43rem;width:calc(var(--mh) * .461373);height:var(--mh);-webkit-transform:translateX(-50%);transform:translateX(-50%)}
+.mapframe{position:absolute;left:50%;top:calc(var(--st) - 4.7rem);top:min(0px,calc(var(--st) - 4.7rem));width:43rem;width:calc(var(--mh) * .461373);height:var(--mh);-webkit-transform:translateX(-50%);transform:translateX(-50%)}
 .mapframe .base,.mapframe .ov{position:absolute;left:0;top:0;width:100%;height:100%}
 .chips{position:absolute;top:calc(var(--hdr) + .9rem);left:0;right:0;display:-webkit-box;display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 1.8rem .6rem;z-index:3;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
@@ -544,6 +544,8 @@ function paintCanvas(){
   var r = document.documentElement.classList;
   r.toggle("onbg", S.screen !== "app");
   r.toggle("mapbg", S.screen === "app" && S.tab === "map");
+  var m = document.getElementById("themecolor");
+  if (m) m.setAttribute("content", S.screen !== "app" ? "#378285" : "#F4FAFB");
 }
 
 /* ---------- views ---------- */
