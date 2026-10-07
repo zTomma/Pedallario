@@ -49,8 +49,12 @@ img{-webkit-user-drag:none}
 p,h1,h2,h3,ol,ul{margin:0;padding:0}
 
 #app{position:fixed;top:0;bottom:0;left:0;right:0;margin:0 auto;width:100%;max-width:500px;overflow:hidden;background:#F7FBFB}
-/* iPhone home-screen app: the layout viewport can end above the real bottom edge, JS sets the true height */
-html.fixh #app{bottom:auto;height:var(--appH)}
+/* iPhone home-screen app: when the page is shorter than the screen, the bar sits closer to the edge and the leftover strip takes the screen colour */
+html.gap{--sb:0px}
+html{background:#F7FBFB}
+html.onbg{background:#378285}
+html.mapbg{background:#cdd3d2}
+.view.still{overflow:hidden}
 .screen{position:absolute;top:0;left:0;right:0;bottom:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .fadein{-webkit-animation:fadeIn var(--d,.4s) ease-out both;animation:fadeIn var(--d,.4s) ease-out both}
 @-webkit-keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -474,6 +478,7 @@ function show(screen){
   S.screen = screen;
   SCREENS.forEach(function(id){ $("#s-" + id).hidden = id !== screen; });
   $("#s-" + screen).scrollTop = 0;
+  if (typeof paintCanvas === "function") paintCanvas();
   persist();
 }
 function enter(tab){ show("app"); go(tab, {instant:true}); }
@@ -522,18 +527,24 @@ function movePill(i, instant){
 }
 tabbar.addEventListener("touchstart", function(e){ if (e.target.closest("button.on")) { spring.press = .94; drawPill(); } }, {passive:true});
 document.addEventListener("touchend", function(){ if (spring.press !== 1) { spring.press = 1; drawPill(); } }, {passive:true});
-/* Home-screen (standalone) mode on iPhone: window.innerHeight can be shorter than the screen, which leaves a strip at the bottom */
+/* Home-screen (standalone) mode on iPhone: window.innerHeight can be shorter than the screen */
 function fitScreen(){
   var root = document.documentElement, h = window.innerHeight, w = window.innerWidth;
   var standalone = window.navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
   var scr = (w < h) ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
-  if (standalone && w <= 600 && scr > h && scr - h <= 140) { h = scr; root.classList.add("fixh"); } else { root.classList.remove("fixh"); }
+  root.classList.toggle("gap", standalone && w <= 600 && scr - h >= 20 && scr - h <= 140);
   root.style.setProperty("--appH", h + "px");
 }
 fitScreen();
 window.addEventListener("resize", function(){ fitScreen(); movePill(TABS.indexOf(navTab()), true); });
 window.addEventListener("orientationchange", function(){ setTimeout(fitScreen, 250); });
 window.addEventListener("pageshow", fitScreen);
+/* colour of the page behind the app, so nothing looks cut at the bottom edge */
+function paintCanvas(){
+  var r = document.documentElement.classList;
+  r.toggle("onbg", S.screen !== "app");
+  r.toggle("mapbg", S.screen === "app" && S.tab === "map");
+}
 
 /* ---------- views ---------- */
 function navTab(){ return S.tab === "detail" ? S.from : (S.tab === "finale" ? "medal" : S.tab); }
@@ -555,6 +566,8 @@ function render(anim){
   $("#tabbar").hidden = S.tab === "finale";
   $("#lines").hidden = !(S.tab === "home" || S.tab === "medal" || S.tab === "finale");
   v.innerHTML = ({home:homeView, map:mapView, medal:medalView, explore:exploreView, detail:detailView, finale:finaleView})[S.tab]();
+  v.classList.toggle("still", S.tab === "map");
+  paintCanvas();
   v.classList.remove("swap");
   if (anim) { void v.offsetWidth; v.classList.add("swap"); }
   bind(v);
